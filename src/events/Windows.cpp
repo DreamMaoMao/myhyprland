@@ -651,7 +651,7 @@ void Events::listener_unmapWindow(void* owner, void* data) {
 
     Debug::log(LOG, "{:c} unmapped", PWINDOW);
 
-    if (!PWINDOW->m_pWLSurface.exists() || !PWINDOW->m_bIsMapped) {
+    if ((!PWINDOW->m_pWLSurface.exists() || !PWINDOW->m_bIsMapped) && !PWINDOW->m_bIsMinimized) {
         Debug::log(WARN, "{} unmapped without being mapped??", PWINDOW);
         PWINDOW->m_bFadingOut = false;
         return;
@@ -743,10 +743,12 @@ void Events::listener_unmapWindow(void* owner, void* data) {
         Debug::log(LOG, "Unmapped was not focused, ignoring a refocus.");
     }
 
-    Debug::log(LOG, "Destroying the SubSurface tree of unmapped window {}", PWINDOW);
-    SubsurfaceTree::destroySurfaceTree(PWINDOW->m_pSurfaceTree);
+    if(!PWINDOW->m_bIsMinimized) {
+        Debug::log(LOG, "Destroying the SubSurface tree of unmapped window {}", PWINDOW);
+        SubsurfaceTree::destroySurfaceTree(PWINDOW->m_pSurfaceTree);
 
-    PWINDOW->m_pSurfaceTree = nullptr;
+        PWINDOW->m_pSurfaceTree = nullptr;
+    }
 
     PWINDOW->m_bFadingOut = true;
 
