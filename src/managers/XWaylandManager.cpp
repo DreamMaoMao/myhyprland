@@ -170,22 +170,6 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
     if (pWindow->m_bIsFullscreen)
         g_pCompositor->setWindowFullscreen(pWindow, false, FULLSCREEN_FULL);
 
-    // make window's position out of the screen
-    const auto PMONITOR = g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID);
-    if (PMONITOR) {
-        pWindow->m_vRealPosition     = pWindow->m_vRealPosition.vec() * 10 ;
-    }
-
-    // Allow the renderer to catch the last frame.
-    g_pHyprOpenGL->makeWindowSnapshot(pWindow);
-
-    // swallowing
-    if (pWindow->m_pSwallowed && g_pCompositor->windowExists(pWindow->m_pSwallowed)) {
-        pWindow->m_pSwallowed->setHidden(false);
-        g_pLayoutManager->getCurrentLayout()->onWindowCreated(pWindow->m_pSwallowed);
-        pWindow->m_pSwallowed = nullptr;
-    }
-
     bool wasLastWindow = false;
 
     if (pWindow == g_pCompositor->m_pLastWindow) {
@@ -208,7 +192,7 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
     if (wasLastWindow) {
         const auto PWINDOWCANDIDATE = g_pLayoutManager->getCurrentLayout()->getNextWindowCandidate(pWindow);
 
-        Debug::log(LOG, "On closed window, new focused candidate is {}", PWINDOWCANDIDATE);
+        Debug::log(LOG, "foreign toplevel On minimized window, new focused candidate is {}", PWINDOWCANDIDATE);
 
         if (PWINDOWCANDIDATE != g_pCompositor->m_pLastWindow) {
             if (!PWINDOWCANDIDATE)
@@ -219,11 +203,11 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
             g_pInputManager->simulateMouseMovement();
         }
     } else {
-        Debug::log(LOG, "Unmapped was not focused, ignoring a refocus.");
+        Debug::log(LOG, "foreign toplevel Unmapped was not focused, ignoring a refocus.");
     }
 
     // make it invisible
-    Debug::log(LOG, "Destroying the SubSurface tree of unmapped window {}", pWindow);
+    Debug::log(LOG, "foreign toplevel Destroying the SubSurface tree of unmapped window {}", pWindow);
     SubsurfaceTree::destroySurfaceTree(pWindow->m_pSurfaceTree);
     pWindow->m_pSurfaceTree = nullptr;
 
@@ -231,16 +215,11 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
     pWindow->m_bFadingOut = true;
     g_pCompositor->addToFadingOutSafe(pWindow);
 
-    // g_pHyprRenderer->damageMonitor(g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID));
-
     if (!pWindow->m_bX11DoesntWantBorders)                                                  // don't animate out if they weren't animated in.
         pWindow->m_vRealPosition = pWindow->m_vRealPosition.vec() + Vector2D(0.01f, 0.01f); // it has to be animated, otherwise onWindowPostCreateClose will ignore it
 
     // Make it completely transparent
     pWindow->m_fAlpha = 0.f;
-
-    // // force report all sizes (QT sometimes has an issue with this)
-    g_pCompositor->forceReportSizesToWindowsOnWorkspace(pWindow->m_iWorkspaceID);
 
 }
 
@@ -262,7 +241,6 @@ void CHyprXWaylandManager::foreignToplevelMapWindow(CWindow* pWindow) {
     pWindow->m_pSurfaceTree = SubsurfaceTree::createTreeRoot(pWindow->m_pWLSurface.wlr(), foreignToplevelAddViewCoords, pWindow, pWindow);
     g_pLayoutManager->getCurrentLayout()->onWindowCreated(pWindow);
     g_pCompositor->focusWindow(pWindow);
-    // g_pHyprRenderer->damageMonitor(g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID));
 }
 
 void CHyprXWaylandManager::setWindowSize(CWindow* pWindow, Vector2D size, bool force) {
