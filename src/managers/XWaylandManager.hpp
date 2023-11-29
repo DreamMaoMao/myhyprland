@@ -19,8 +19,6 @@ class CHyprXWaylandManager {
     std::string   getTitle(CWindow*);
     std::string   getAppIDClass(CWindow*);
     void          sendCloseWindow(CWindow*);
-    void          foreignToplevelMapWindow(CWindow* pWindow);
-    void          foreignToplevelUnmapWindow(CWindow* pWindow);
     void          setWindowSize(CWindow*, Vector2D, bool force = false);
     void          setWindowStyleTiled(CWindow*, uint32_t);
     void          setWindowFullscreen(CWindow*, bool);

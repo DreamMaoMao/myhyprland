@@ -263,9 +263,6 @@ void CWindow::createToplevelHandle() {
     hyprListener_toplevelClose.initCallback(
         &m_phForeignToplevel->events.request_close, [&](void* owner, void* data) { g_pCompositor->closeWindow(this); }, this, "Toplevel");
 
-    hyprListener_toplevelMinimize.initCallback(
-        &m_phForeignToplevel->events.request_minimize, [&](void* owner, void* data) { g_pCompositor->minimizeWindow(this); }, this, "Toplevel");
-
     m_iLastToplevelMonitorID = m_iMonitorID;
 }
 
@@ -276,7 +273,6 @@ void CWindow::destroyToplevelHandle() {
     hyprListener_toplevelActivate.removeCallback();
     hyprListener_toplevelClose.removeCallback();
     hyprListener_toplevelFullscreen.removeCallback();
-    hyprListener_toplevelMinimize.removeCallback();
 
     wlr_foreign_toplevel_handle_v1_destroy(m_phForeignToplevel);
     m_phForeignToplevel = nullptr;
@@ -290,7 +286,6 @@ void CWindow::updateToplevel() {
 
     wlr_foreign_toplevel_handle_v1_set_title(m_phForeignToplevel, m_szTitle.c_str());
     wlr_foreign_toplevel_handle_v1_set_fullscreen(m_phForeignToplevel, m_bIsFullscreen);
-    wlr_foreign_toplevel_handle_v1_set_minimized(m_phForeignToplevel, m_bIsMinimized);
 
     if (m_iLastToplevelMonitorID != m_iMonitorID) {
         if (const auto PMONITOR = g_pCompositor->getMonitorFromID(m_iLastToplevelMonitorID); PMONITOR && PMONITOR->m_bEnabled)

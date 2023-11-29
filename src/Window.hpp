@@ -176,7 +176,6 @@ class CWindow {
     DYNLISTENER(toplevelClose);
     DYNLISTENER(toplevelActivate);
     DYNLISTENER(toplevelFullscreen);
-    DYNLISTENER(toplevelMinimize);
     DYNLISTENER(setOverrideRedirect);
     DYNLISTENER(associateX11);
     DYNLISTENER(dissociateX11);
@@ -215,8 +214,6 @@ class CWindow {
     bool        m_bDraggingTiled = false; // for dragging around tiled windows
     bool        m_bIsFullscreen  = false;
     bool        m_bWasMaximized  = false;
-    bool        m_bIsMinimized   = false;
-
     uint64_t    m_iMonitorID     = -1;
     std::string m_szTitle        = "";
     std::string m_szInitialTitle = "";
