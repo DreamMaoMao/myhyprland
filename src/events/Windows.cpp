@@ -812,6 +812,11 @@ void Events::listener_commitWindow(void* owner, void* data) {
 void Events::listener_destroyWindow(void* owner, void* data) {
     CWindow* PWINDOW = (CWindow*)owner;
 
+    if(PWINDOW->m_bIsMinimized) {
+        listener_unmapWindow(owner,data);
+        PWINDOW->m_bIsMinimized = false;
+    }
+
     Debug::log(LOG, "{:c} destroyed, queueing.", PWINDOW);
 
     if (PWINDOW->m_bIsX11)
