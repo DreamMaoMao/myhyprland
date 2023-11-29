@@ -212,8 +212,8 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
     pWindow->m_pSurfaceTree = nullptr;
 
     // make it fade out
-    pWindow->m_bFadingOut = true;
-    g_pCompositor->addToFadingOutSafe(pWindow);
+    // pWindow->m_bFadingOut = true;
+    // g_pCompositor->addToFadingOutSafe(pWindow);
 
     if (!pWindow->m_bX11DoesntWantBorders)                                                  // don't animate out if they weren't animated in.
         pWindow->m_vRealPosition = pWindow->m_vRealPosition.vec() + Vector2D(0.01f, 0.01f); // it has to be animated, otherwise onWindowPostCreateClose will ignore it
@@ -235,7 +235,7 @@ void CHyprXWaylandManager::foreignToplevelMapWindow(CWindow* pWindow) {
           ""); 
 
     pWindow->m_bIsMapped = true;
-    pWindow->m_bFadingOut = false;
+    // pWindow->m_bFadingOut = false;
     pWindow->m_fAlpha.setValueAndWarp(0.f);
     pWindow->m_fAlpha = 1.f;
     pWindow->m_pSurfaceTree = SubsurfaceTree::createTreeRoot(pWindow->m_pWLSurface.wlr(), foreignToplevelAddViewCoords, pWindow, pWindow);
