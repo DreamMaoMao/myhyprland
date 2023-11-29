@@ -170,6 +170,24 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
     if (pWindow->m_bIsFullscreen)
         g_pCompositor->setWindowFullscreen(pWindow, false, FULLSCREEN_FULL);
 
+    const auto PMONITOR = g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID);
+    if (pWindow) {
+        pWindow->m_vOriginalClosedPos     = pWindow->m_vRealPosition.vec() - PMONITOR->vecPosition;
+        pWindow->m_vOriginalClosedSize    = pWindow->m_vRealSize.vec();
+        pWindow->m_eOriginalClosedExtents = pWindow->getFullWindowExtents();
+    }
+
+    // Allow the renderer to catch the last frame.
+    g_pHyprOpenGL->makeWindowSnapshot(pWindow);
+
+    // swallowing
+    if (pWindow->m_pSwallowed && g_pCompositor->windowExists(pWindow->m_pSwallowed)) {
+        pWindow->m_pSwallowed->setHidden(false);
+        g_pLayoutManager->getCurrentLayout()->onWindowCreated(pWindow->m_pSwallowed);
+        pWindow->m_pSwallowed = nullptr;
+    }
+
+
     bool wasLastWindow = false;
 
     if (pWindow == g_pCompositor->m_pLastWindow) {
