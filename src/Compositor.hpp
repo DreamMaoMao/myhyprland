@@ -186,6 +186,7 @@ class CCompositor {
     SLayerSurface* getLayerSurfaceFromWlr(wlr_layer_surface_v1*);
     SLayerSurface* getLayerSurfaceFromSurface(wlr_surface*);
     void           closeWindow(CWindow*);
+    void           minimizeWindow(CWindow*);
     Vector2D       parseWindowVectorArgsRelative(const std::string&, const Vector2D&);
     void           forceReportSizesToWindowsOnWorkspace(const int&);
     bool           cursorOnReservedArea();

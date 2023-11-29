@@ -2283,6 +2283,29 @@ void CCompositor::closeWindow(CWindow* pWindow) {
     }
 }
 
+void CCompositor::minimizeWindow(CWindow* pWindow) {
+    if (!pWindow) {
+        return;
+    }
+
+    auto pCurrentFocusWindow = g_pCompositor->m_pLastWindow;
+
+    if (!pWindow->m_bIsMinimized && pCurrentFocusWindow == pWindow) {
+        pWindow->m_bIsMinimized = false;
+        // Events::listener_unmapWindow(pWindow,NULL);
+        g_pXWaylandManager->foreignToplevelUnmapWindow(pWindow);
+        // pWindow->onUnmap();
+        pWindow->updateToplevel();
+    } else if (!pWindow->m_bIsMinimized && pCurrentFocusWindow != pWindow) {
+        g_pCompositor->focusWindow(pWindow);
+    } else {
+        pWindow->m_bIsMinimized = true;
+        // g_pXWaylandManager->foreignToplevelMapWindow(pWindow);
+        pWindow->onMap();
+        pWindow->updateToplevel();
+    }
+}
+
 SLayerSurface* CCompositor::getLayerSurfaceFromSurface(wlr_surface* pSurface) {
     std::pair<wlr_surface*, bool> result = {pSurface, false};
 
