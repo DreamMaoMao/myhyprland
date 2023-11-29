@@ -1019,9 +1019,6 @@ bool CCompositor::windowValidMapped(CWindow* pWindow) {
     if (!windowExists(pWindow))
         return false;
 
-    if (pWindow->m_bIsMinimized)
-        return true;
-
     if (pWindow->m_bIsX11 && !pWindow->m_bMappedX11)
         return false;
 
@@ -2301,8 +2298,8 @@ void CCompositor::minimizeWindow(CWindow* pWindow) {
     } else if (!pWindow->m_bIsMinimized && pCurrentFocusWindow != pWindow) {
         g_pCompositor->focusWindow(pWindow);
     } else if(pWindow->m_bIsMinimized) {
-        pWindow->m_bIsMinimized = false;
         g_pXWaylandManager->foreignToplevelMapWindow(pWindow);
+        pWindow->m_bIsMinimized = false;
         g_pCompositor->focusWindow(pWindow);
         wlr_foreign_toplevel_handle_v1_set_activated(pWindow->m_phForeignToplevel, true);
         pWindow->updateToplevel();
