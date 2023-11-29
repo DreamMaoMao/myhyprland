@@ -1019,6 +1019,9 @@ bool CCompositor::windowValidMapped(CWindow* pWindow) {
     if (!windowExists(pWindow))
         return false;
 
+    if (pWindow->m_bIsMinimized)
+        return true;
+
     if (pWindow->m_bIsX11 && !pWindow->m_bMappedX11)
         return false;
 
