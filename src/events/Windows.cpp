@@ -961,6 +961,11 @@ void Events::listener_activateXDG(wl_listener* listener, void* data) {
 void Events::listener_activateX11(void* owner, void* data) {
     const auto         PWINDOW = (CWindow*)owner;
 
+    if (PWINDOW->m_bIsMinimized) {
+        g_pCompositor->minimizeWindow(PWINDOW);
+        return;
+    }
+
     static auto* const PFOCUSONACTIVATE = &g_pConfigManager->getConfigValuePtr("misc:focus_on_activate")->intValue;
 
     Debug::log(LOG, "X11 Activate request for window {}", PWINDOW);

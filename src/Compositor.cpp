@@ -2300,12 +2300,12 @@ void CCompositor::minimizeWindow(CWindow* pWindow) {
         pWindow->updateToplevel();
     } else if (!pWindow->m_bIsMinimized && pCurrentFocusWindow != pWindow) {
         g_pCompositor->focusWindow(pWindow);
-    } else {
+    } else if(pWindow->m_bIsMinimized) {
         pWindow->m_bIsMinimized = false;
         g_pXWaylandManager->foreignToplevelMapWindow(pWindow);
-        pWindow->updateToplevel();
         g_pCompositor->focusWindow(pWindow);
         wlr_foreign_toplevel_handle_v1_set_activated(pWindow->m_phForeignToplevel, true);
+        pWindow->updateToplevel();
     }
 }
 
