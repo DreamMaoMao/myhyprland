@@ -2284,12 +2284,12 @@ void CCompositor::closeWindow(CWindow* pWindow) {
 }
 
 void CCompositor::minimizeWindow(CWindow* pWindow) {
+    
     if (!pWindow) {
         return;
     }
 
     auto pCurrentFocusWindow = g_pCompositor->m_pLastWindow;
-
     if (!pWindow->m_bIsMinimized && pCurrentFocusWindow == pWindow) {
         pWindow->m_bIsMinimized = true;
         g_pXWaylandManager->foreignToplevelUnmapWindow(pWindow);
@@ -2298,7 +2298,6 @@ void CCompositor::minimizeWindow(CWindow* pWindow) {
     } else if (!pWindow->m_bIsMinimized && pCurrentFocusWindow != pWindow) {
         g_pCompositor->focusWindow(pWindow);
     } else {
-        // pMonitor->changeWorkspace(pWorksapce);
         pWindow->m_bIsMinimized = false;
         g_pXWaylandManager->foreignToplevelMapWindow(pWindow);
         pWindow->updateToplevel();

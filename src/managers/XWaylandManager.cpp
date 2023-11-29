@@ -50,15 +50,6 @@ void foreignToplevelAddViewCoords(void* pWindow, int* x, int* y) {
     }
 }
 
-void foreignToplevelSetAnimToMove(void* data) {
-    auto* const        PANIMCFG = g_pConfigManager->getAnimationPropertyConfig("windowsMove");
-
-    CAnimatedVariable* animvar = (CAnimatedVariable*)data;
-
-    animvar->setConfig(PANIMCFG);
-}
-
-
 void CHyprXWaylandManager::activateSurface(wlr_surface* pSurface, bool activate) {
     if (!pSurface)
         return;
@@ -171,16 +162,18 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
         pWindow->m_bFadingOut = false;
         return;
     }
+
+    // mark unmap
     pWindow->m_bIsMapped = false;
 
-
+    //exit fullscreen
     if (pWindow->m_bIsFullscreen)
         g_pCompositor->setWindowFullscreen(pWindow, false, FULLSCREEN_FULL);
 
+    // make window's position out of the screen
     const auto PMONITOR = g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID);
     if (PMONITOR) {
         pWindow->m_vRealPosition     = pWindow->m_vRealPosition.vec() * 10 ;
-
     }
 
     // Allow the renderer to catch the last frame.
@@ -205,12 +198,13 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
 
     // remove the fullscreen window status from workspace if we closed it
     const auto PWORKSPACE = g_pCompositor->getWorkspaceByID(pWindow->m_iWorkspaceID);
-
     if (PWORKSPACE->m_bHasFullscreenWindow && pWindow->m_bIsFullscreen)
         PWORKSPACE->m_bHasFullscreenWindow = false;
 
+    // remove it form layout nodes,it can't be tiled
     g_pLayoutManager->getCurrentLayout()->onWindowRemoved(pWindow);
 
+    // if the window is the foucus window,need to unfoucs it and refocus to next window
     if (wasLastWindow) {
         const auto PWINDOWCANDIDATE = g_pLayoutManager->getCurrentLayout()->getNextWindowCandidate(pWindow);
 
@@ -228,29 +222,22 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
         Debug::log(LOG, "Unmapped was not focused, ignoring a refocus.");
     }
 
+    // make it invisible
     Debug::log(LOG, "Destroying the SubSurface tree of unmapped window {}", pWindow);
     SubsurfaceTree::destroySurfaceTree(pWindow->m_pSurfaceTree);
-
     pWindow->m_pSurfaceTree = nullptr;
 
+    // make it fade out
     pWindow->m_bFadingOut = true;
-
     g_pCompositor->addToFadingOutSafe(pWindow);
 
-    g_pHyprRenderer->damageMonitor(g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID));
+    // g_pHyprRenderer->damageMonitor(g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID));
 
     if (!pWindow->m_bX11DoesntWantBorders)                                                  // don't animate out if they weren't animated in.
         pWindow->m_vRealPosition = pWindow->m_vRealPosition.vec() + Vector2D(0.01f, 0.01f); // it has to be animated, otherwise onWindowPostCreateClose will ignore it
 
-   // anims
-    // g_pAnimationManager->onWindowPostCreateClose(pWindow, true);
+    // Make it completely transparent
     pWindow->m_fAlpha = 0.f;
-
-    // // Destroy Foreign Toplevel
-    // pWindow->destroyToplevelHandle();
-
-    // // recheck idle inhibitors
-    // g_pInputManager->recheckIdleInhibitorStatus();
 
     // // force report all sizes (QT sometimes has an issue with this)
     g_pCompositor->forceReportSizesToWindowsOnWorkspace(pWindow->m_iWorkspaceID);
@@ -261,10 +248,12 @@ void CHyprXWaylandManager::foreignToplevelMapWindow(CWindow* pWindow) {
     CWorkspace *pWorkspace;
     Debug::log(LOG, "foreigh toplevel remapped window {}", pWindow);
     pWorkspace = g_pCompositor->getWorkspaceByID(pWindow->m_iWorkspaceID);
+
+    // Todo: restore name of workspace
     if (!pWorkspace)
       pWorkspace = g_pCompositor->createNewWorkspace(
           pWindow->m_iWorkspaceID, pWindow->m_iMonitorID,
-          ""); // todo restore name of workspace
+          ""); 
 
     pWindow->m_bIsMapped = true;
     pWindow->m_bFadingOut = false;
