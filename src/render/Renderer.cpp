@@ -213,6 +213,7 @@ void CHyprRenderer::renderWorkspaceWindows(CMonitor* pMonitor, CWorkspace* pWork
 
     // Non-floating main
     for (auto& w : g_pCompositor->m_vWindows) {
+
         if (w->isHidden() && !w->m_bIsMapped && !w->m_bFadingOut)
             continue;
 

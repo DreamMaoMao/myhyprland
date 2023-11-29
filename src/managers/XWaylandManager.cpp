@@ -213,14 +213,22 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
 
     // make it fade out
     pWindow->m_bFadingOut = true;
-    // g_pCompositor->addToFadingOutSafe(pWindow);
+    g_pCompositor->addToFadingOutSafe(pWindow);
+
+    g_pHyprRenderer->damageMonitor(g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID));
 
     if (!pWindow->m_bX11DoesntWantBorders)                                                  // don't animate out if they weren't animated in.
         pWindow->m_vRealPosition = pWindow->m_vRealPosition.vec() + Vector2D(0.01f, 0.01f); // it has to be animated, otherwise onWindowPostCreateClose will ignore it
 
     // Make it completely transparent
+    g_pAnimationManager->onWindowPostCreateClose(pWindow, true);
     pWindow->m_fAlpha = 0.f;
 
+    // force report all sizes (QT sometimes has an issue with this)
+    g_pCompositor->forceReportSizesToWindowsOnWorkspace(pWindow->m_iWorkspaceID);
+
+    // update lastwindow after focus
+    pWindow->onUnmap();
 }
 
 void CHyprXWaylandManager::foreignToplevelMapWindow(CWindow* pWindow) {
@@ -236,6 +244,8 @@ void CHyprXWaylandManager::foreignToplevelMapWindow(CWindow* pWindow) {
 
     pWindow->m_bIsMapped = true;
     pWindow->m_bFadingOut = false;
+    pWindow->onMap();
+
     pWindow->m_fAlpha.setValueAndWarp(0.f);
     pWindow->m_fAlpha = 1.f;
     pWindow->m_pSurfaceTree = SubsurfaceTree::createTreeRoot(pWindow->m_pWLSurface.wlr(), foreignToplevelAddViewCoords, pWindow, pWindow);
