@@ -157,21 +157,26 @@ void CHyprXWaylandManager::sendCloseWindow(CWindow* pWindow) {
 
 void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
 
-    if (!pWindow->m_pWLSurface.exists()) {
-        Debug::log(WARN, "foreign toplevel {} unmapped without being mapped??", pWindow);
+    // CWindow* pWindow = (CWindow*)owner;
+
+    Debug::log(LOG, "{:c} unmapped", pWindow);
+
+    if ((!pWindow->m_pWLSurface.exists() || !pWindow->m_bIsMapped) && !pWindow->m_bIsMinimized) {
+        Debug::log(WARN, "{} unmapped without being mapped??", pWindow);
         pWindow->m_bFadingOut = false;
         return;
     }
 
-    // mark unmap
-    pWindow->m_bIsMapped = false;
+    g_pEventManager->postEvent(SHyprIPCEvent{"closewindow", std::format("{:x}", pWindow)});
+    EMIT_HOOK_EVENT("closeWindow", pWindow);
 
-    //exit fullscreen
+    g_pProtocolManager->m_pToplevelExportProtocolManager->onWindowUnmap(pWindow);
+
     if (pWindow->m_bIsFullscreen)
         g_pCompositor->setWindowFullscreen(pWindow, false, FULLSCREEN_FULL);
 
     const auto PMONITOR = g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID);
-    if (pWindow) {
+    if (PMONITOR) {
         pWindow->m_vOriginalClosedPos     = pWindow->m_vRealPosition.vec() - PMONITOR->vecPosition;
         pWindow->m_vOriginalClosedSize    = pWindow->m_vRealSize.vec();
         pWindow->m_eOriginalClosedExtents = pWindow->getFullWindowExtents();
@@ -187,7 +192,6 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
         pWindow->m_pSwallowed = nullptr;
     }
 
-
     bool wasLastWindow = false;
 
     if (pWindow == g_pCompositor->m_pLastWindow) {
@@ -198,19 +202,24 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
         g_pInputManager->releaseAllMouseButtons();
     }
 
+    pWindow->m_bMappedX11 = false;
+
     // remove the fullscreen window status from workspace if we closed it
     const auto PWORKSPACE = g_pCompositor->getWorkspaceByID(pWindow->m_iWorkspaceID);
+
     if (PWORKSPACE->m_bHasFullscreenWindow && pWindow->m_bIsFullscreen)
         PWORKSPACE->m_bHasFullscreenWindow = false;
 
-    // remove it form layout nodes,it can't be tiled
     g_pLayoutManager->getCurrentLayout()->onWindowRemoved(pWindow);
 
-    // if the window is the foucus window,need to unfoucs it and refocus to next window
+    // do this after onWindowRemoved because otherwise it'll think the window is invalid
+    pWindow->m_bIsMapped = false;
+
+    // refocus on a new window if needed
     if (wasLastWindow) {
         const auto PWINDOWCANDIDATE = g_pLayoutManager->getCurrentLayout()->getNextWindowCandidate(pWindow);
 
-        Debug::log(LOG, "foreign toplevel On minimized window, new focused candidate is {}", PWINDOWCANDIDATE);
+        Debug::log(LOG, "On closed window, new focused candidate is {}", PWINDOWCANDIDATE);
 
         if (PWINDOWCANDIDATE != g_pCompositor->m_pLastWindow) {
             if (!PWINDOWCANDIDATE)
@@ -221,16 +230,18 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
             g_pInputManager->simulateMouseMovement();
         }
     } else {
-        Debug::log(LOG, "foreign toplevel Unmapped was not focused, ignoring a refocus.");
+        Debug::log(LOG, "Unmapped was not focused, ignoring a refocus.");
     }
 
-    // make it invisible
-    Debug::log(LOG, "foreign toplevel Destroying the SubSurface tree of unmapped window {}", pWindow);
-    SubsurfaceTree::destroySurfaceTree(pWindow->m_pSurfaceTree);
-    pWindow->m_pSurfaceTree = nullptr;
+    if(!pWindow->m_bIsMinimized) {
+        Debug::log(LOG, "Destroying the SubSurface tree of unmapped window {}", pWindow);
+        SubsurfaceTree::destroySurfaceTree(pWindow->m_pSurfaceTree);
 
-    // make it fade out
+        pWindow->m_pSurfaceTree = nullptr;
+    }
+
     pWindow->m_bFadingOut = true;
+
     g_pCompositor->addToFadingOutSafe(pWindow);
 
     g_pHyprRenderer->damageMonitor(g_pCompositor->getMonitorFromID(pWindow->m_iMonitorID));
@@ -238,9 +249,12 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
     if (!pWindow->m_bX11DoesntWantBorders)                                                  // don't animate out if they weren't animated in.
         pWindow->m_vRealPosition = pWindow->m_vRealPosition.vec() + Vector2D(0.01f, 0.01f); // it has to be animated, otherwise onWindowPostCreateClose will ignore it
 
-    // Make it completely transparent
+    // anims
     g_pAnimationManager->onWindowPostCreateClose(pWindow, true);
     pWindow->m_fAlpha = 0.f;
+
+    // recheck idle inhibitors
+    g_pInputManager->recheckIdleInhibitorStatus();
 
     // force report all sizes (QT sometimes has an issue with this)
     g_pCompositor->forceReportSizesToWindowsOnWorkspace(pWindow->m_iWorkspaceID);
@@ -261,6 +275,7 @@ void CHyprXWaylandManager::foreignToplevelMapWindow(CWindow* pWindow) {
           ""); 
 
     pWindow->m_bIsMapped = true;
+    pWindow->m_bMappedX11 = true;
     pWindow->m_bFadingOut = false;
     pWindow->onMap();
 
