@@ -2285,7 +2285,7 @@ void CCompositor::closeWindow(CWindow* pWindow) {
 
 void CCompositor::minimizeWindow(CWindow* pWindow) {
     
-    if (!pWindow || pWindow->m_iWorkspaceID == -99) {
+    if (!pWindow || g_pCompositor->isWorkspaceSpecial(w->m_iWorkspaceID)) {
         return;
     }
 
