@@ -2280,12 +2280,16 @@ SLayerSurface* CCompositor::getLayerSurfaceFromWlr(wlr_layer_surface_v1* pLS) {
 void CCompositor::closeWindow(CWindow* pWindow) {
     if (pWindow && windowValidMapped(pWindow)) {
         g_pXWaylandManager->sendCloseWindow(pWindow);
+    } else if (pWindow && pWindow->m_bIsMinimized) {
+        g_pXWaylandManager->foreignToplevelMapWindow(pWindow);
+        pWindow->m_bIsMinimized = false;   
+        closeWindow(pWindow);    
     }
 }
 
 void CCompositor::minimizeWindow(CWindow* pWindow) {
     
-    if (!pWindow || g_pCompositor->isWorkspaceSpecial(w->m_iWorkspaceID)) {
+    if (!pWindow || g_pCompositor->isWorkspaceSpecial(pWindow->m_iWorkspaceID)) {
         return;
     }
 
