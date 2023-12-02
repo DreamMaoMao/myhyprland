@@ -263,27 +263,31 @@ void CHyprXWaylandManager::foreignToplevelUnmapWindow(CWindow* pWindow) {
     pWindow->onUnmap();
 }
 
-void CHyprXWaylandManager::foreignToplevelMapWindow(CWindow* pWindow) {
+void CHyprXWaylandManager::foreignToplevelMapWindow(CWindow* pWindow,bool isResume) {
     CWorkspace *pWorkspace;
     Debug::log(LOG, "foreigh toplevel remapped window {}", pWindow);
-    pWorkspace = g_pCompositor->getWorkspaceByID(pWindow->m_iWorkspaceID);
 
-    // Todo: restore name of workspace
-    if (!pWorkspace)
-      pWorkspace = g_pCompositor->createNewWorkspace(
-          pWindow->m_iWorkspaceID, pWindow->m_iMonitorID,
-          ""); 
 
     pWindow->m_bIsMapped = true;
     pWindow->m_bMappedX11 = true;
     pWindow->m_bFadingOut = false;
     pWindow->onMap();
-
-    pWindow->m_fAlpha.setValueAndWarp(0.f);
-    pWindow->m_fAlpha = 1.f;
     pWindow->m_pSurfaceTree = SubsurfaceTree::createTreeRoot(pWindow->m_pWLSurface.wlr(), foreignToplevelAddViewCoords, pWindow, pWindow);
-    g_pLayoutManager->getCurrentLayout()->onWindowCreated(pWindow);
-    g_pCompositor->focusWindow(pWindow);
+
+    if (isResume) {
+        pWorkspace = g_pCompositor->getWorkspaceByID(pWindow->m_iWorkspaceID);
+
+        // Todo: restore name of workspace
+        if (!pWorkspace)
+          pWorkspace = g_pCompositor->createNewWorkspace(
+              pWindow->m_iWorkspaceID, pWindow->m_iMonitorID,
+              ""); 
+
+        pWindow->m_fAlpha.setValueAndWarp(0.f);
+        pWindow->m_fAlpha = 1.f;
+        g_pLayoutManager->getCurrentLayout()->onWindowCreated(pWindow);
+        g_pCompositor->focusWindow(pWindow);
+    }
 }
 
 void CHyprXWaylandManager::setWindowSize(CWindow* pWindow, Vector2D size, bool force) {

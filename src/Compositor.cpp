@@ -2281,7 +2281,7 @@ void CCompositor::closeWindow(CWindow* pWindow) {
     if (pWindow && windowValidMapped(pWindow)) {
         g_pXWaylandManager->sendCloseWindow(pWindow);
     } else if (pWindow && pWindow->m_bIsMinimized) {
-        g_pXWaylandManager->foreignToplevelMapWindow(pWindow);
+        g_pXWaylandManager->foreignToplevelMapWindow(pWindow,false);
         pWindow->m_bIsMinimized = false;   
         closeWindow(pWindow);    
     }
@@ -2302,7 +2302,7 @@ void CCompositor::minimizeWindow(CWindow* pWindow) {
     } else if (!pWindow->m_bIsMinimized && pCurrentFocusWindow != pWindow) {
         g_pCompositor->focusWindow(pWindow);
     } else if(pWindow->m_bIsMinimized) {
-        g_pXWaylandManager->foreignToplevelMapWindow(pWindow);
+        g_pXWaylandManager->foreignToplevelMapWindow(pWindow,true);
         pWindow->m_bIsMinimized = false;
         g_pCompositor->focusWindow(pWindow);
         wlr_foreign_toplevel_handle_v1_set_activated(pWindow->m_phForeignToplevel, true);
