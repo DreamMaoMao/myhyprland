@@ -2281,6 +2281,7 @@ void CCompositor::closeWindow(CWindow* pWindow) {
     if (pWindow && windowValidMapped(pWindow)) {
         g_pXWaylandManager->sendCloseWindow(pWindow);
     } else if (pWindow && pWindow->m_bIsMinimized) {
+        pWindow->m_iWorkspaceID = g_pCompositor->m_pLastMonitor->activeWorkspace;
         g_pXWaylandManager->foreignToplevelMapWindow(pWindow,false);
         pWindow->m_bIsMinimized = false;   
         closeWindow(pWindow);    
