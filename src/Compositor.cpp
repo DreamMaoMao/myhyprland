@@ -2294,6 +2294,8 @@ void CCompositor::minimizeWindow(CWindow* pWindow) {
         return;
     }
 
+    Debug::log(LOG, "handler for forerign-toplevel minimize-request,window:{}", pWindow);
+
     auto pCurrentFocusWindow = g_pCompositor->m_pLastWindow;
     if (!pWindow->m_bIsMinimized && pCurrentFocusWindow == pWindow) {
         pWindow->m_bIsMinimized = true;
