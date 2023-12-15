@@ -713,6 +713,7 @@ void Events::listener_unmapWindow(void* owner, void* data) {
     }
 
     PWINDOW->m_bMappedX11 = false;
+    PWINDOW->m_bCloseing = false;
 
     // remove the fullscreen window status from workspace if we closed it
     const auto PWORKSPACE = g_pCompositor->getWorkspaceByID(PWINDOW->m_iWorkspaceID);
@@ -1198,23 +1199,23 @@ void Events::listener_requestMinimize(void* owner, void* data) {
     Debug::log(LOG, "Client minimize request for {}", PWINDOW);
 
     // //use foreign-toplevel minimize request handler
-    // g_pCompositor->minimizeWindow(PWINDOW);
+    g_pCompositor->minimizeWindow(PWINDOW);
 
-    if (PWINDOW->m_bIsX11) {
-        if (!PWINDOW->m_bMappedX11 || PWINDOW->m_iX11Type != 1)
-            return;
+    // if (PWINDOW->m_bIsX11) {
+    //     if (!PWINDOW->m_bMappedX11 || PWINDOW->m_iX11Type != 1)
+    //         return;
 
-        const auto E = (wlr_xwayland_minimize_event*)data;
+    //     const auto E = (wlr_xwayland_minimize_event*)data;
 
-        g_pEventManager->postEvent({"minimize", std::format("{:x},{}", (uintptr_t)PWINDOW, (int)E->minimize)});
-        EMIT_HOOK_EVENT("minimize", (std::vector<void*>{PWINDOW, (void*)E->minimize}));
+    //     g_pEventManager->postEvent({"minimize", std::format("{:x},{}", (uintptr_t)PWINDOW, (int)E->minimize)});
+    //     EMIT_HOOK_EVENT("minimize", (std::vector<void*>{PWINDOW, (void*)E->minimize}));
 
-        wlr_xwayland_surface_set_minimized(PWINDOW->m_uSurface.xwayland, E->minimize && g_pCompositor->m_pLastWindow != PWINDOW); // fucking DXVK
-    } else {
-        const auto E = (wlr_foreign_toplevel_handle_v1_minimized_event*)data;
-        g_pEventManager->postEvent({"minimize", std::format("{:x},{}", (uintptr_t)PWINDOW, E ? (int)E->minimized : 1)});
-        EMIT_HOOK_EVENT("minimize", (std::vector<void*>{PWINDOW, (void*)(E ? (uint64_t)E->minimized : 1)}));
-    }
+    //     wlr_xwayland_surface_set_minimized(PWINDOW->m_uSurface.xwayland, E->minimize && g_pCompositor->m_pLastWindow != PWINDOW); // fucking DXVK
+    // } else {
+    //     const auto E = (wlr_foreign_toplevel_handle_v1_minimized_event*)data;
+    //     g_pEventManager->postEvent({"minimize", std::format("{:x},{}", (uintptr_t)PWINDOW, E ? (int)E->minimized : 1)});
+    //     EMIT_HOOK_EVENT("minimize", (std::vector<void*>{PWINDOW, (void*)(E ? (uint64_t)E->minimized : 1)}));
+    // }
 }
 
 void Events::listener_requestMove(void* owner, void* data) {

@@ -215,7 +215,6 @@ class CWindow {
     bool        m_bDraggingTiled = false; // for dragging around tiled windows
     bool        m_bIsFullscreen  = false;
     bool        m_bWasMaximized  = false;
-    bool        m_bIsMinimized   = false;
 
     uint64_t    m_iMonitorID     = -1;
     std::string m_szTitle        = "";
@@ -310,6 +309,10 @@ class CWindow {
 
     // for idle inhibiting windows
     eIdleInhibitMode m_eIdleInhibitMode = IDLEINHIBIT_NONE;
+
+    // for minimize window
+    bool    m_bIsMinimized      = false;
+    bool    m_bCloseing         = false;
 
     // for groups
     struct SGroupData {

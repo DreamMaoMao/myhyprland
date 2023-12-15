@@ -2279,6 +2279,7 @@ SLayerSurface* CCompositor::getLayerSurfaceFromWlr(wlr_layer_surface_v1* pLS) {
 
 void CCompositor::closeWindow(CWindow* pWindow) {
     if (pWindow && windowValidMapped(pWindow)) {
+        pWindow->m_bCloseing = true;
         g_pXWaylandManager->sendCloseWindow(pWindow);
     } else if (pWindow && pWindow->m_bIsMinimized) {
         pWindow->m_iWorkspaceID = g_pCompositor->m_pLastMonitor->activeWorkspace;
@@ -2312,7 +2313,7 @@ void CCompositor::minimizeWindow(CWindow* pWindow) {
     Debug::log(LOG, "handler for forerign-toplevel minimize-request,window:{}", pWindow);
 
     auto pCurrentFocusWindow = g_pCompositor->m_pLastWindow;
-    if (!pWindow->m_bIsMinimized && pCurrentFocusWindow == pWindow) {
+    if (!pWindow->m_bIsMinimized && pCurrentFocusWindow == pWindow && !pWindow->m_bCloseing && pWindow->m_bMappedX11) {
         pWindow->m_bIsMinimized = true;
         g_pXWaylandManager->foreignToplevelUnmapWindow(pWindow);
         wlr_foreign_toplevel_handle_v1_set_activated(pWindow->m_phForeignToplevel, false);
