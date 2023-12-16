@@ -2289,20 +2289,23 @@ void CCompositor::closeWindow(CWindow* pWindow) {
     }
 }
 
-// void CCompositor::restoreMinimizeWindow() {
-//     for (auto &w : g_pCompositor->m_vWindows)
-//     {
-//         if(!w->m_bIsMinimized) {
-//             continue;
-//         }
-
-//         g_pXWaylandManager->foreignToplevelMapWindow(w.get(),true);
-//         w->m_bIsMinimized = false;
-//         g_pCompositor->focusWindow(w.get());
-//         wlr_foreign_toplevel_handle_v1_set_activated(w->m_phForeignToplevel, true);
-//         w->updateToplevel();
-// 	}
-// }
+void CCompositor::restoreMinimizeWindow() {
+    for (auto &w : g_pCompositor->m_vWindows)
+    {
+        if(!w->m_bIsMinimized) {
+            continue;
+        }
+        CWindow *pWindow = w.get(); //w address maybe change after w.get(),so need to save it
+        Debug::log(LOG, "restore minimized window:{}", pWindow);
+        g_pXWaylandManager->foreignToplevelMapWindow(pWindow,true);
+        pWindow->m_bIsMinimized = false;
+        g_pCompositor->focusWindow(pWindow);
+        Debug::log(LOG, "resfocus minimized window:{}", pWindow);
+        // wlr_foreign_toplevel_handle_v1_set_activated(w->m_phForeignToplevel, true);
+        pWindow->updateToplevel();
+        break;
+	}
+}
 
 void CCompositor::minimizeWindow(CWindow* pWindow) {
     
@@ -2324,7 +2327,7 @@ void CCompositor::minimizeWindow(CWindow* pWindow) {
         g_pXWaylandManager->foreignToplevelMapWindow(pWindow,true);
         pWindow->m_bIsMinimized = false;
         g_pCompositor->focusWindow(pWindow);
-        wlr_foreign_toplevel_handle_v1_set_activated(pWindow->m_phForeignToplevel, true);
+        // wlr_foreign_toplevel_handle_v1_set_activated(pWindow->m_phForeignToplevel, true);
         pWindow->updateToplevel();
     }
 }
