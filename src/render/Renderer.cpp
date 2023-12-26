@@ -1103,9 +1103,13 @@ void CHyprRenderer::renderMonitor(CMonitor* pMonitor) {
         }
         g_pHyprOpenGL->blend(true);
 
-        // wlr_box renderBox = {0, 0, (int)pMonitor->vecPixelSize.x, (int)pMonitor->vecPixelSize.y};
-        // renderWorkspace(pMonitor, g_pCompositor->getWorkspaceByID(pMonitor->activeWorkspace), &now, renderBox);
-        renderAllWorkspace(pMonitor,&now);
+        if(m_bInOverview) {
+            renderAllWorkspace(pMonitor,&now);
+        } else {
+            wlr_box renderBox = {0, 0, (int)pMonitor->vecPixelSize.x, (int)pMonitor->vecPixelSize.y};
+            renderWorkspace(pMonitor, g_pCompositor->getWorkspaceByID(pMonitor->activeWorkspace), &now, renderBox);        
+        }
+
 
         renderLockscreen(pMonitor, &now);
 
@@ -1217,11 +1221,11 @@ void CHyprRenderer::renderWorkspace(CMonitor* pMonitor, CWorkspace* pWorkspace, 
 
     TRACY_GPU_ZONE("RenderWorkspace");
 
-    // if (!DELTALESSTHAN((double)geometry.width / (double)geometry.height, pMonitor->vecPixelSize.x / pMonitor->vecPixelSize.y, 0.01)) {
-    //     Debug::log(ERR, "Ignoring geometry in renderWorkspace: aspect ratio mismatch");
-    //     scale     = 1.f;
-    //     translate = Vector2D{};
-    // }
+    if (!DELTALESSTHAN((double)geometry.width / (double)geometry.height, pMonitor->vecPixelSize.x / pMonitor->vecPixelSize.y, 0.01) && !m_bInOverview) {
+        Debug::log(ERR, "Ignoring geometry in renderWorkspace: aspect ratio mismatch");
+        scale     = 1.f;
+        translate = Vector2D{};
+    }
 
     g_pHyprOpenGL->m_RenderData.pWorkspace = pWorkspace;
     renderAllClientsForWorkspace(pMonitor, pWorkspace, now, translate, scale);

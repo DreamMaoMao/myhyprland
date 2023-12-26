@@ -124,7 +124,7 @@ void CWorkspace::startAnim(bool in, bool left, bool instant) {
         }
     }
 
-    if (instant) {
+    if (instant || g_pHyprRenderer->m_bInOverview) {
         m_vRenderOffset.warp();
         m_fAlpha.warp();
     }
