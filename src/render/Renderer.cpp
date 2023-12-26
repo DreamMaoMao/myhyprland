@@ -776,6 +776,125 @@ bool CHyprRenderer::attemptDirectScanout(CMonitor* pMonitor) {
     return true;
 }
 
+int CHyprRenderer::getWorkspaceNumInMonitor(CMonitor* pMonitor) {
+    int num = 0;
+    for (auto& w : g_pCompositor->m_vWorkspaces) {
+        if (w->m_iMonitorID == pMonitor->ID)
+            num++;
+    }
+    return num;
+}
+
+void CHyprRenderer::renderAllWorkspace(CMonitor* pMonitor,timespec* now) {
+    CWorkspace *pTempNodes[100];
+    CWorkspace *pNode;
+    wlr_box renderBox;
+    int i, n = 0;
+    int cx, cy;
+    int dx, cw, ch;;
+    int cols, rows, overcols,NODECOUNT;
+
+    if (!pMonitor)
+        return;
+
+    NODECOUNT = getWorkspaceNumInMonitor(pMonitor);          
+
+    if (NODECOUNT == 0) 
+        return;
+
+    // static const auto *PBORDERSIZE = &HyprlandAPI::getConfigValue(PHANDLE, "general:border_size")->intValue;
+    // static const auto *GAPPO = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hycov:overview_gappo")->intValue;
+    // static const auto *GAPPI = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hycov:overview_gappi")->intValue;
+    static const int PBORDERSIZE = 5;
+    static const int GAPPO = 60;
+    static const int GAPPI = 24;
+
+    /*
+    m is region that is moniotr,
+    w is region that is monitor but don not contain bar  
+    */
+    int m_x = pMonitor->vecPosition.x;
+    int m_y = pMonitor->vecPosition.y;
+    // int w_x = pMonitor->vecPosition.x;
+    // int w_y = pMonitor->vecReservedTopLeft.y;
+    int m_width = pMonitor->vecSize.x;
+    int m_height = pMonitor->vecSize.y;
+    // int w_width = pMonitor->vecSize.x;
+    // int w_height = pMonitor->vecSize.y - pMonitor->vecReservedTopLeft.y;
+
+
+    for (auto &node : g_pCompositor->m_vWorkspaces) {
+        if (node->m_iMonitorID == pMonitor->ID) {
+            pTempNodes[n] = node.get();
+            n++;
+        }
+    }
+
+    pTempNodes[n] = NULL;
+
+    if (NODECOUNT == 0)
+        return;
+
+    // one client arrange
+    if (NODECOUNT == 1)
+    {
+        renderBox = {0, 0, (int)pMonitor->vecPixelSize.x, (int)pMonitor->vecPixelSize.y};
+        renderWorkspace(pMonitor, g_pCompositor->getWorkspaceByID(pMonitor->activeWorkspace), now, renderBox);
+        return;
+    }
+
+    // two client arrange
+    if (NODECOUNT == 2)
+    {
+        pNode = pTempNodes[0];
+        cw = (m_width - 2 * (GAPPO) - (GAPPI)) / 2;
+        ch = (m_height - 2 * (GAPPO)) * 0.65;
+
+        renderBox = {(int)(m_x + cw + (GAPPO) + (GAPPI)), (int)(m_y + (m_height - ch) / 2 + (GAPPO)), (int)(cw - 2 * (PBORDERSIZE)), (int)(ch - 2 * (PBORDERSIZE))};
+        renderWorkspace(pMonitor, pNode, now, renderBox);      
+
+        renderBox = {(int)(m_x + (GAPPO)), (int)(m_y + (m_height - ch) / 2 + (GAPPO)), (int)(cw - 2 * (PBORDERSIZE)), (int)(ch - 2 * (PBORDERSIZE))};
+        renderWorkspace(pMonitor, pTempNodes[1], now, renderBox);  
+
+        return;
+    }
+
+    //more than two client arrange
+
+    //Calculate the integer part of the square root of the number of nodes
+    for (cols = 0; cols <= NODECOUNT / 2; cols++)
+        if (cols * cols >= NODECOUNT)
+            break;
+            
+    //The number of rows and columns multiplied by the number of nodes
+    // must be greater than the number of nodes to fit all the Windows
+    rows = (cols && (cols - 1) * cols >= NODECOUNT) ? cols - 1 : cols;
+
+    //Calculate the width and height of the layout area based on 
+    //the number of rows and columns
+    ch = (int)((m_height - 2 * (GAPPO) - (rows - 1) * (GAPPI)) / rows);
+    cw = (int)((m_width - 2 * (GAPPO) - (cols - 1) * (GAPPI)) / cols);
+
+    //If the nodes do not exactly fill all rows, 
+    //the number of Windows in the unfilled rows is
+    overcols = NODECOUNT % cols;
+
+    if (overcols)
+        dx = (int)((m_width - overcols * cw - (overcols - 1) * (GAPPI)) / 2) - (GAPPO);
+    for (i = 0, pNode = pTempNodes[0]; pNode; pNode = pTempNodes[i + 1], i++)
+    {
+        cx = m_x + (i % cols) * (cw + (GAPPI));
+        cy = m_y + (int)(i / cols) * (ch + (GAPPI));
+        if (overcols && i >= (NODECOUNT-overcols))
+        {
+            cx += dx;
+        }
+
+        renderBox = {(int)(cx + (GAPPO)), (int)(cy + (GAPPO)), (int)(cw - 2 * (PBORDERSIZE)), (int)(ch - 2 * (PBORDERSIZE))};
+        renderWorkspace(pMonitor, pNode, now, renderBox); 
+    }    
+}
+
 void CHyprRenderer::renderMonitor(CMonitor* pMonitor) {
     static std::chrono::high_resolution_clock::time_point startRender        = std::chrono::high_resolution_clock::now();
     static std::chrono::high_resolution_clock::time_point startRenderOverlay = std::chrono::high_resolution_clock::now();
@@ -984,8 +1103,9 @@ void CHyprRenderer::renderMonitor(CMonitor* pMonitor) {
         }
         g_pHyprOpenGL->blend(true);
 
-        wlr_box renderBox = {0, 0, (int)pMonitor->vecPixelSize.x, (int)pMonitor->vecPixelSize.y};
-        renderWorkspace(pMonitor, g_pCompositor->getWorkspaceByID(pMonitor->activeWorkspace), &now, renderBox);
+        // wlr_box renderBox = {0, 0, (int)pMonitor->vecPixelSize.x, (int)pMonitor->vecPixelSize.y};
+        // renderWorkspace(pMonitor, g_pCompositor->getWorkspaceByID(pMonitor->activeWorkspace), &now, renderBox);
+        renderAllWorkspace(pMonitor,&now);
 
         renderLockscreen(pMonitor, &now);
 
@@ -1097,11 +1217,11 @@ void CHyprRenderer::renderWorkspace(CMonitor* pMonitor, CWorkspace* pWorkspace, 
 
     TRACY_GPU_ZONE("RenderWorkspace");
 
-    if (!DELTALESSTHAN((double)geometry.width / (double)geometry.height, pMonitor->vecPixelSize.x / pMonitor->vecPixelSize.y, 0.01)) {
-        Debug::log(ERR, "Ignoring geometry in renderWorkspace: aspect ratio mismatch");
-        scale     = 1.f;
-        translate = Vector2D{};
-    }
+    // if (!DELTALESSTHAN((double)geometry.width / (double)geometry.height, pMonitor->vecPixelSize.x / pMonitor->vecPixelSize.y, 0.01)) {
+    //     Debug::log(ERR, "Ignoring geometry in renderWorkspace: aspect ratio mismatch");
+    //     scale     = 1.f;
+    //     translate = Vector2D{};
+    // }
 
     g_pHyprOpenGL->m_RenderData.pWorkspace = pWorkspace;
     renderAllClientsForWorkspace(pMonitor, pWorkspace, now, translate, scale);

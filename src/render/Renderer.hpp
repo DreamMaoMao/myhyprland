@@ -34,6 +34,8 @@ struct SSessionLockSurface;
 class CHyprRenderer {
   public:
     void                            renderMonitor(CMonitor* pMonitor);
+    int                             getWorkspaceNumInMonitor(CMonitor* pMonitor);
+    void                            renderAllWorkspace(CMonitor* pMonitor,timespec* now);
     void                            outputMgrApplyTest(wlr_output_configuration_v1*, bool);
     void                            arrangeLayersForMonitor(const int&);
     void                            damageSurface(wlr_surface*, double, double, double scale = 1.0);
