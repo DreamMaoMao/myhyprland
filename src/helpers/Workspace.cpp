@@ -39,7 +39,10 @@ CWorkspace::~CWorkspace() {
 
 void CWorkspace::startAnim(bool in, bool left, bool instant) {
     const auto ANIMSTYLE = m_fAlpha.m_pConfig->pValues->internalStyle;
-
+    if(g_pHyprRenderer->m_bInOverview){ //workspace anim will make window disappear of no-active worksapce
+      return;
+    }
+    
     if (ANIMSTYLE.find("slidefade") == 0) {
         const auto PMONITOR = g_pCompositor->getMonitorFromID(m_iMonitorID);
         float      movePerc = 100.f;
@@ -124,7 +127,7 @@ void CWorkspace::startAnim(bool in, bool left, bool instant) {
         }
     }
 
-    if (instant || g_pHyprRenderer->m_bInOverview) {
+    if (instant) {
         m_vRenderOffset.warp();
         m_fAlpha.warp();
     }

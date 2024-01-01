@@ -270,8 +270,11 @@ void CHyprRenderer::renderWorkspaceWindows(CMonitor* pMonitor, CWorkspace* pWork
         if (!shouldRenderWindow(w.get(), pMonitor, pWorkspace))
             continue;
 
+        if (w->m_iWorkspaceID != pWorkspace->m_iID) //fix bug,without this judgement, float win will render in all worksapce
+            continue;
+
         // render the bad boy
-        renderWindow(w.get(), pMonitor, time, true, RENDER_PASS_ALL);
+        renderWindow(w.get(), pMonitor, time, true, RENDER_PASS_ALL);  //Note this,may be a float win render problem
     }
 
     // pinned always above
